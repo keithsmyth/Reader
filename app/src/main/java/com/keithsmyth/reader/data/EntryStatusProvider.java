@@ -5,21 +5,15 @@ package com.keithsmyth.reader.data;
 import java.util.HashSet;
 import java.util.Set;
 
-public final class EntryStatusProvider {
+import javax.inject.Singleton;
 
-    private static EntryStatusProvider INSTANCE;
+@Singleton
+public final class EntryStatusProvider {
 
     private final Set<String> read;
 
-    private EntryStatusProvider() {
+    public EntryStatusProvider() {
         read = new HashSet<>();
-    }
-
-    public static EntryStatusProvider provide() {
-        if (INSTANCE == null) {
-            INSTANCE = new EntryStatusProvider();
-        }
-        return INSTANCE;
     }
 
     public boolean isRead(String entryId) {

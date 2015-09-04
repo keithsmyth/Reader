@@ -15,7 +15,8 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.keithsmyth.reader.R;
-import com.keithsmyth.reader.data.BusProvider;
+import com.keithsmyth.reader.data.DaggerDataComponent;
+import com.keithsmyth.reader.data.EntryStatusProvider;
 import com.keithsmyth.reader.data.GetRssTask;
 import com.keithsmyth.reader.model.Entry;
 import com.keithsmyth.reader.ui.adapter.RssAdapter;
@@ -25,12 +26,21 @@ import com.squareup.otto.Subscribe;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
 import butterknife.ButterKnife;
 
 public class RssFragment extends Fragment {
 
-    private final Bus bus = BusProvider.provide();
+    @Inject Bus bus;
+    @Inject EntryStatusProvider entryStatusProvider;
+
     private RssAdapter adapter;
+
+    @Override public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        DaggerDataComponent.create().inject(this);
+    }
 
     @Nullable @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -42,7 +52,7 @@ public class RssFragment extends Fragment {
         final RecyclerView list = ButterKnife.findById(view, R.id.list);
         list.setHasFixedSize(true);
         list.setLayoutManager(new LinearLayoutManager(getActivity()));
-        adapter = new RssAdapter();
+        adapter = new RssAdapter(entryStatusProvider);
         list.setAdapter(adapter);
 
         final GetRssTask task = new GetRssTask(new GetRssTask.Listener() {

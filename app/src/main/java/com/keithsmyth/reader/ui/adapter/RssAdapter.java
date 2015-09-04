@@ -25,8 +25,12 @@ import butterknife.ButterKnife;
 public class RssAdapter extends RecyclerView.Adapter<RssAdapter.RssViewHolder> {
 
     private final List<Entry> items = new ArrayList<>();
-    private final EntryStatusProvider entryStatus = EntryStatusProvider.provide();
+    private final EntryStatusProvider entryStatus;
     private Bus bus;
+
+    public RssAdapter(EntryStatusProvider entryStatus) {
+        this.entryStatus = entryStatus;
+    }
 
     public void register(Bus bus) {
         this.bus = bus;
@@ -44,19 +48,21 @@ public class RssAdapter extends RecyclerView.Adapter<RssAdapter.RssViewHolder> {
         notifyDataSetChanged();
     }
 
-    @Override public RssViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+    @Override public RssViewHolder onCreateViewHolder(ViewGroup viewGroup, int position) {
         final LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
         final View view = inflater.inflate(R.layout.item_rss, viewGroup, false);
         return new RssViewHolder(view);
     }
 
-    @Override public void onBindViewHolder(RssViewHolder holder, final int i) {
-        final Entry entry = items.get(i);
+    @Override public void onBindViewHolder(RssViewHolder holder, final int position) {
+        final Entry entry = items.get(position);
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 entryStatus.setRead(entry.id);
-                notifyItemChanged(i);
-                bus.post(new RssItemClickEvent(entry));
+                notifyItemChanged(position);
+                if (bus != null) {
+                    bus.post(new RssItemClickEvent(entry));
+                }
             }
         });
 
