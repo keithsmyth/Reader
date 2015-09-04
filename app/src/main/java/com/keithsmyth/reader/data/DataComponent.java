@@ -1,18 +1,38 @@
 package com.keithsmyth.reader.data;
 
+import android.database.sqlite.SQLiteOpenHelper;
+
+import com.keithsmyth.reader.AppModule;
+import com.keithsmyth.reader.data.external.ExternalDataModule;
+import com.keithsmyth.reader.data.local.LocalDataModule;
+import com.keithsmyth.reader.data.local.provider.EntryProvider;
+import com.keithsmyth.reader.data.local.provider.FeedProvider;
 import com.keithsmyth.reader.ui.fragment.RssFragment;
 import com.squareup.otto.Bus;
+import com.squareup.sqlbrite.BriteDatabase;
 
 import javax.inject.Singleton;
 
 import dagger.Component;
 
 @Singleton
-@Component(modules = DataModule.class)
+@Component(modules = {
+        ExternalDataModule.class,
+        LocalDataModule.class,
+        AppModule.class
+})
 public interface DataComponent {
     Bus bus();
 
-    EntryStatusProvider entryStatusProvider();
+    FeedProvider feedProvider();
+
+    EntryProvider entryProvider();
+
+    SQLiteOpenHelper openHelper();
+
+    BriteDatabase db();
+
+    RssController rssController();
 
     void inject(RssFragment fragment);
 }

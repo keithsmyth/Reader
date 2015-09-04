@@ -1,11 +1,13 @@
-package com.keithsmyth.reader.data;
+package com.keithsmyth.reader.data.external;
 
 import android.os.AsyncTask;
 import android.support.v4.util.Pair;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.keithsmyth.reader.data.DataUtils;
 import com.keithsmyth.reader.model.Entry;
+import com.keithsmyth.reader.model.Feed;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
@@ -15,15 +17,13 @@ import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
-public class GetRssTask extends AsyncTask<String, Void, List<Entry>> {
+public class GetRssTask extends AsyncTask<String, Void, Feed> {
+
+    private static final String TAG = "GetRssTask";
 
     private final Listener listener;
     private String error;
@@ -32,10 +32,12 @@ public class GetRssTask extends AsyncTask<String, Void, List<Entry>> {
         this.listener = listener;
     }
 
-    @Override protected List<Entry> doInBackground(String... params) {
+    @Override protected Feed doInBackground(String... params) {
+        final String url = params[0];
+        Log.d(TAG, "doInBackground() called with: " + "params = [" + url + "]");
         final OkHttpClient client = new OkHttpClient();
         final Request request = new Request.Builder()
-            .url(params[0])
+            .url(url)
             .build();
         final Response response;
         try {
@@ -53,16 +55,37 @@ public class GetRssTask extends AsyncTask<String, Void, List<Entry>> {
 
             final List<Entry> items = new ArrayList<>();
             parser.require(XmlPullParser.START_TAG, null, "feed");
+
+            String feedId = null;
+            String feedName = null;
+
             while (parser.next() != XmlPullParser.END_TAG) {
                 if (parser.getEventType() != XmlPullParser.START_TAG) {continue;}
+
                 final String name = parser.getName();
-                if ("entry".equals(name)) {
-                    processEntry(parser, items);
-                } else {
-                    skip(parser);
+                switch (name) {
+                    case "id":
+                        feedId = readTextTag(parser, "id");
+                        break;
+                    case "title":
+                        feedName = readTextTag(parser, "title");
+                        break;
+                    case "entry":
+                        if (TextUtils.isEmpty(feedId)) {
+                            throw new RuntimeException("No feed Id before entries");
+                        }
+                        processEntry(parser, items, feedId);
+                        break;
+                    default:
+                        skip(parser);
                 }
             }
-            return items;
+
+            // create a new feed object
+            final Feed feed = new Feed(feedId, feedName, url, new Date());
+            feed.entries.addAll(items);
+
+            return feed;
         } catch (XmlPullParserException | IOException e) {
             error = e.getMessage();
             return null;
@@ -70,15 +93,16 @@ public class GetRssTask extends AsyncTask<String, Void, List<Entry>> {
 
     }
 
-    @Override protected void onPostExecute(List<Entry> items) {
-        if (items == null) {
+    @Override
+    protected void onPostExecute(Feed feed) {
+        if (feed == null) {
             listener.onError(error);
         } else {
-            listener.onGet(items);
+            listener.onGet(feed);
         }
     }
 
-    private void processEntry(XmlPullParser parser, List<Entry> items) throws IOException, XmlPullParserException {
+    private void processEntry(XmlPullParser parser, List<Entry> items, String feedId) throws IOException, XmlPullParserException {
         parser.require(XmlPullParser.START_TAG, null, "entry");
         String id = null;
         String title = null;
@@ -111,7 +135,7 @@ public class GetRssTask extends AsyncTask<String, Void, List<Entry>> {
                     skip(parser);
             }
         }
-        items.add(new Entry(id, title, published, url, thumbnail));
+        items.add(new Entry(id, feedId, title, published, url, thumbnail, false));
     }
 
     private String readTextTag(XmlPullParser parser, String tag) throws IOException, XmlPullParserException {
@@ -134,13 +158,7 @@ public class GetRssTask extends AsyncTask<String, Void, List<Entry>> {
 
     private Date readTextTagAsDate(XmlPullParser parser, String tag) throws IOException, XmlPullParserException {
         final String value = readTextTag(parser, tag);
-        final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SS", Locale.getDefault());
-        try {
-            return format.parse(value);
-        } catch (ParseException e) {
-            Log.e(getClass().getSimpleName(), e.getMessage(), e);
-            return null;
-        }
+        return DataUtils.parseDate(value);
     }
 
     private String readAttributeConditional(XmlPullParser parser, String tag, String attribute, Pair<String, String> condition) throws IOException, XmlPullParserException {
@@ -178,7 +196,7 @@ public class GetRssTask extends AsyncTask<String, Void, List<Entry>> {
     }
 
     public interface Listener {
-        void onGet(List<Entry> items);
+        void onGet(Feed feed);
 
         void onError(String msg);
     }
