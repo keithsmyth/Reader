@@ -1,4 +1,4 @@
-package com.keithsmyth.reader.data;
+package com.keithsmyth.reader.data.controller;
 
 import android.util.Log;
 

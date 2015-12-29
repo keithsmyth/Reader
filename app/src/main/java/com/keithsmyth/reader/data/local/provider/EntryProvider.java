@@ -44,21 +44,10 @@ public final class EntryProvider {
     public Observable<List<Entry>> get(String feedId) {
         Log.d(TAG, "get() called with: " + "feedId = [" + feedId + "]");
         return db.createQuery(EntryTable.TABLE, String.format("select * from %s where %s = ?", EntryTable.TABLE, EntryTable.COL_FEED_ID), feedId)
-                .map(new Func1<SqlBrite.Query, List<Entry>>() {
+                .mapToList(new Func1<Cursor, Entry>() {
                     @Override
-                    public List<Entry> call(SqlBrite.Query query) {
-                        final List<Entry> items = new ArrayList<>();
-                        final Cursor cursor = query.run();
-                        try {
-                            if (cursor.moveToFirst()) {
-                                do {
-                                    items.add(EntryTable.mapFromCursor(cursor));
-                                } while (cursor.moveToNext());
-                            }
-                        } finally {
-                            cursor.close();
-                        }
-                        return items;
+                    public Entry call(Cursor cursor) {
+                        return EntryTable.mapFromCursor(cursor);
                     }
                 });
     }
@@ -84,7 +73,6 @@ public final class EntryProvider {
     }
 
     private Set<String> getEntryKeysByFeed(String feedId) {
-        final Set<String> readEntries = new HashSet<>();
         final SQLiteDatabase sqLiteDatabase = sqLiteOpenHelper.getReadableDatabase();
         final Cursor cursor = sqLiteDatabase.query(EntryTable.TABLE,
                 new String[]{EntryTable.COL_ID},
@@ -93,6 +81,7 @@ public final class EntryProvider {
                 null,
                 null,
                 null);
+        final Set<String> readEntries = new HashSet<>(cursor.getCount());
         try {
             while (cursor.moveToNext()) {
                 readEntries.add(cursor.getString(0));

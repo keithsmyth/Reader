@@ -10,6 +10,7 @@ import com.squareup.sqlbrite.BriteDatabase;
 import com.squareup.sqlbrite.SqlBrite;
 
 import java.util.Date;
+import java.util.List;
 
 import javax.inject.Singleton;
 
@@ -27,6 +28,17 @@ public class FeedProvider {
 
     public FeedProvider(BriteDatabase db) {
         this.db = db;
+    }
+
+    public Observable<List<Feed>> get() {
+        Log.d(TAG, "get() called with: " + "");
+        return db.createQuery(FeedTable.TABLE, "select * from " + FeedTable.TABLE)
+                .mapToList(new Func1<Cursor, Feed>() {
+                    @Override
+                    public Feed call(Cursor cursor) {
+                        return FeedTable.mapFromCursor(cursor);
+                    }
+                });
     }
 
     public Observable<Feed> get(String feedId) {
