@@ -9,7 +9,7 @@ import com.keithsmyth.reader.data.external.ExternalDataModule;
 import com.keithsmyth.reader.data.local.LocalDataModule;
 import com.keithsmyth.reader.data.local.provider.EntryProvider;
 import com.keithsmyth.reader.data.local.provider.FeedProvider;
-import com.keithsmyth.reader.ui.fragment.FeedFragment;
+import com.keithsmyth.reader.ui.fragment.ListFeedsFragment;
 import com.keithsmyth.reader.ui.fragment.RssFragment;
 import com.squareup.otto.Bus;
 import com.squareup.sqlbrite.BriteDatabase;
@@ -41,5 +41,5 @@ public interface DataComponent {
 
     void inject(RssFragment fragment);
 
-    void inject(FeedFragment fragment);
+    void inject(ListFeedsFragment fragment);
 }

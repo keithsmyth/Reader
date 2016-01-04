@@ -30,7 +30,9 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 
-public class FeedFragment extends Fragment implements AdapterDelegate.Listener<Feed> {
+public class ListFeedsFragment extends Fragment implements AdapterDelegate.Listener<Feed> {
+
+    private static final String ADD_FEED_DIALOG_TAG = "ADD_FEED_DIALOG_TAG";
 
     private Navigatable navigatable;
     private FeedAdapter adapter;
@@ -57,7 +59,7 @@ public class FeedFragment extends Fragment implements AdapterDelegate.Listener<F
     @Override
     public View onCreateView(LayoutInflater inflater,
                              @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_feed, container, false);
+        return inflater.inflate(R.layout.fragment_list_feeds, container, false);
     }
 
     @Override
@@ -70,6 +72,13 @@ public class FeedFragment extends Fragment implements AdapterDelegate.Listener<F
         adapter = new FeedAdapter();
         adapter.setListener(this);
         list.setAdapter(adapter);
+
+        view.findViewById(R.id.add).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                navigatable.showDialog(new AddFeedFragment(), ADD_FEED_DIALOG_TAG);
+            }
+        });
 
         feedSub = feedController.getFeeds()
                 .subscribeOn(Schedulers.newThread())

@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Reader</string>
+    <string name="add_feed_input_hint">Enter the feed URL</string>
 
 </resources>
